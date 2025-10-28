@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CUSTOMER INFORMATION| CircleSpin</title>
+  <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      background: #f5f7fa;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      background: #1b2b41;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 25px 10px;
+      box-shadow: 2px 0 6px rgba(0,0,0,0.1);
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 40px;
+      color: #00c3ff;
+      letter-spacing: 1px;
+    }
+
+    .menu {
+      width: 100%;
+    }
+
+    .menu a {
+      display: block;
+      color: white;
+      text-decoration: none;
+      padding: 12px 20px;
+      margin: 5px 0;
+      border-radius: 8px;
+      transition: background 0.3s;
+    }
+
+    .menu a.active {
+      background: #00c3ff;
+      color: #1b2b41;
+      font-weight: bold;
+    }
+
+    .menu a:hover {
+      background: #00a9e0;
+      color: #1b2b41;
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      padding: 30px;
+      background: white;
+      border-radius: 12px;
+      margin: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    select, input, button {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      background: #00c3ff;
+      color: white;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #0099cc;
+    }
+
+    #reader {
+      width: 100%;
+      margin-top: 10px;
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-around;
+        padding: 10px;
+      }
+      .logo {
+        display: none;
+      }
+      .menu {
+        display: flex;
+        gap: 10px;
+      }
+      .menu a {
+        flex: 1;
+        text-align: center;
+        padding: 8px;
+        margin: 0;
+      }
+      .main-content {
+        margin: 10px;
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LEFT MENU BAR-->
+  <div class="sidebar">
+    <div class="logo">⚙️ CircleSpin</div>
+    <div class="menu">
+      <a href="#" class="active">📋 SELECT CUSTOMER</a>
+      <a href="#">📦 DATA CHECK</a>
+      <a href="#">📊 ANALYSIS</a>
+      <a href="#">⚙️ SETTING</a>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <h2>CUSTOMER DATA INPUT</h2>
+
+    <label>SELECT CUSTOMER：</label>
+    <select id="clientSelect">
+      <option value="">SELECT CUSTOMER</option>
+      <option value="abc">ABC CONPANY</option>
+      <option value="efg">EFG CONPANY</option>
+    </select>
+
+    <div id="formContainer"></div>
+
+    <button id="submitBtn" style="display:none;" onclick="submitData()">SUBMIT</button>
+
+    <div id="reader"></div>
+  </div>
+
+  <script>
+    // Sidebar AUTO LIGHTING
+    document.querySelectorAll('.menu a').forEach(link => {
+      link.addEventListener('click', e => {
+        document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active'));
+        e.target.classList.add('active');
+      });
+    });
+
+    // MAIN FUNCTION
+    const clientSelect = document.getElementById('clientSelect');
+    const formContainer = document.getElementById('formContainer');
+    const submitBtn = document.getElementById('submitBtn');
+    const reader = document.getElementById('reader');
+    let html5QrCode;
+
+    clientSelect.addEventListener('change', () => {
+      const client = clientSelect.value;
+      if (!client) return;
+      submitBtn.style.display = "block";
+
+      if (client === 'abc') {
+        formContainer.innerHTML = `
+          <label>Lot NUMBER：</label>
+          <input id="lot" placeholder="INPUT OR SCAN LOT NUMBER">
+          <button onclick="openCamera()">📷 SCAN </button>
+        `;
+      } else if (client === 'efg') {
+        formContainer.innerHTML = `
+          <label>Lot number：</label>
+          <input id="batch" placeholder="Please input lot number">
+        `;
+      }
+    });
+
+    async function openCamera() {
+      reader.style.display = "block";
+
+      if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("reader");
+      }
+
+      const config = { fps: 10, qrbox: 250 };
+      html5QrCode.start(
+        { facingMode: "environment" },
+        config,
+        qrCodeMessage => {
+          document.getElementById("lot").value = qrCodeMessage;
+          html5QrCode.stop();
+          reader.style.display = "none";
+        },
+        errorMessage => {}
+      ).catch(err => {
+        alert("无法开启相机：" + err);
+      });
+    }
+
+    async function submitData() {
+      const data = {
+        client: clientSelect.value,
+        lot: document.getElementById('lot')?.value || '',
+        batch: document.getElementById('batch')?.value || ''
+      };
+
+      const scriptURL = "https://script.google.com/macros/s/AKfycbwC8oxhb6L5nRskp9pDlqtTudldsYjVMvUEDnVrr886-ZlG-h9_LF7S8O7GthTAaAQK/exec";
+
+      try {
+        await fetch(scriptURL, {
+          method: "POST",
+          body: JSON.stringify(data),
+          headers: { "Content-Type": "application/json" }
+        });
+        alert("✅ SUBMIT SUCCESS！");
+      } catch (err) {
+        alert("❌ FAIL SUBMIT: " + err);
+      }
+    }
+  </script>
+</body>
+</html>
